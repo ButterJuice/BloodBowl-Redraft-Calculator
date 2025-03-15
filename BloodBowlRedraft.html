@@ -492,6 +492,110 @@
       cells.forEach(cell => row.appendChild(cell));
       document.getElementById('teamSheet').querySelector('tbody').appendChild(row);
     }
+
+    // Function to collect player data from the table
+    function getPlayersData() {
+      const players = [];
+      const rows = document.querySelectorAll('#teamSheet tbody tr');
+      rows.forEach(row => {
+        const player = {
+          name: row.querySelector('.name').value,
+          positional: row.querySelector('.positional').value,
+          value: row.querySelector('.value').value,
+          rehirePrice: row.querySelector('.rehirePrice').value
+        };
+        players.push(player);
+      });
+      return players;
+    }
+
+    // Function to collect redraft details (assuming you want to include the budget and other summary data)
+    function getRedraftDetails() {
+      return {
+        totalBudget: document.querySelector('#result').innerText.split("\n")[0],
+        staffCost: document.querySelector('#result').innerText.split("\n")[1],
+        rerollsCost: document.querySelector('#result').innerText.split("\n")[2],
+        playerCost: document.querySelector('#result').innerText.split("\n")[3],
+        remainingBudget: document.querySelector('#result').innerText.split("\n")[4],
+      };
+    }
+
+
+    const handleExport = () => {
+  console.log("Export button clicked!");
+
+  const players = getPlayersData(); 
+  const redraftDetails = getRedraftDetails();
+
+  // Log data to check if they're undefined or empty
+  console.log("Players Data:", players);
+  console.log("Redraft Details:", redraftDetails);
+
+  if (!players || !Array.isArray(players)) {
+    console.error("Players data is not defined or is not an array");
+    return; // Prevent further execution if players data is not valid
+  }
+
+  // Check if redraftDetails is an array or object
+  if (!redraftDetails) {
+    console.error("Redraft details data is undefined");
+    return; // Prevent further execution if redraft details data is not valid
+  }
+
+  // If redraftDetails is an object, convert it into an array of key-value pairs
+  let redraftDetailsArray;
+  if (typeof redraftDetails === "object" && !Array.isArray(redraftDetails)) {
+    redraftDetailsArray = Object.keys(redraftDetails).map(key => ({
+      key: key,
+      value: redraftDetails[key]
+    }));
+  } else {
+    redraftDetailsArray = redraftDetails; // If it's already an array, use it as is
+  }
+
+  const playersCSV = convertToCSV(players);
+  const redraftCSV = convertToCSV(redraftDetailsArray);
+
+  // Trigger downloads
+  downloadCSV(playersCSV, "free_agents_redrafted.csv");
+  downloadCSV(redraftCSV, "redraft_details.csv");
+};
+
+const convertToCSV = (data) => {
+  if (!data || data.length === 0) {
+    console.error("Data is empty or undefined in convertToCSV");
+    return ""; // Return an empty string if the data is invalid
+  }
+
+  // Assuming data is an array of objects
+  const keys = Object.keys(data[0]); // Get the keys of the first object
+  const csv = data.map(row => {
+    return keys.map(key => row[key] || "").join(","); // Handle undefined or null values safely
+  });
+
+  return [keys.join(","), ...csv].join("\n"); // Join headers and rows into a CSV format
+};
+
+
+  const downloadCSV = (csv, filename) => {
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+
   </script>
+
+<button onclick="handleExport()" class="export-button">
+  Export Data
+</button>
+
+
 </body>
 </html>

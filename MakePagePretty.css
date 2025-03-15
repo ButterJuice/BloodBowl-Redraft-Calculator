@@ -74,7 +74,7 @@
     /* Narrow columns for stats and skill upgrade columns */
     .ma, .st, .ag, .pa, .av,
     .chosenPrimary, .chosenSecondary, .randomPrimary, .randomSecondary,
-    .maUpgrade, .stUpgrade, .agUpgrade, .paUpgrade, .avUpgrade .seaso {
+    .maUpgrade, .stUpgrade, .agUpgrade, .paUpgrade, .avUpgrade .seasons {
       width: 40px !important;
     }
     /* Wider column for skills */
