@@ -1,39 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
-    <link rel="stylesheet" href="MakePagePretty.css">
-
+  
+  <link rel="stylesheet" href="MakePagePretty.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blood Bowl Redraft Calculator & Team Sheet</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 20px;
-    }
-    table, th, td {
-      border: 1px solid #aaa;
-      border-collapse: collapse;
-      padding: 4px;
-      text-align: center;
-    }
-    input[type="number"], input[type="text"] {
-      width: 70px;
-    }
-    input[readonly] {
-      background-color: #f3f3f3;
-    }
-    select {
-      width: 160px;
-    }
-    .section {
-      margin-bottom: 30px;
-    }
-    th {
-      font-size: 0.9em;
-    }
-  </style>
+
 </head>
 <body>
   <h1>Blood Bowl Redraft Calculator</h1>
@@ -87,40 +60,41 @@
 
   <h2>Team Sheet</h2>
   <div class="section">
+    <!-- Add Player Button -->
     <button onclick="addPlayerRow()">Add Player</button>
     <div class="table-container">
-        <table id="teamSheet">
+      <table id="teamSheet">
         <thead>
-            <tr>
-            <th>Level</th>
+          <tr>
+            <th class="level">Level</th>
             <th>Name</th>
             <th>Positional</th>
-            <th>Skills</th>
+            <th class="skills">Skills</th>
             <th>Starting Skills</th>
-            <th>MA</th>
-            <th>ST</th>
-            <th>AG</th>
-            <th>PA</th>
-            <th>AV</th>
+            <th class="ma">MA</th>
+            <th class="st">ST</th>
+            <th class="ag">AG</th>
+            <th class="pa">PA</th>
+            <th class="av">AV</th>
             <th>Injury</th>
-            <th>Chosen Prim</th>
-            <th>Chosen Sec</th>
-            <th>Rand Prim</th>
-            <th>Rand Sec</th>
-            <th>MA Upg</th>
-            <th>ST Upg</th>
-            <th>AG Upg</th>
-            <th>PA Upg</th>
-            <th>AV Upg</th>
+            <th class="chosenPrimary">Chosen Prim</th>
+            <th class="chosenSecondary">Chosen Sec</th>
+            <th class="randomPrimary">Rand Prim</th>
+            <th class="randomSecondary">Rand Sec</th>
+            <th class="maUpgrade">MA Upg</th>
+            <th class="stUpgrade">ST Upg</th>
+            <th class="agUpgrade">AG Upg</th>
+            <th class="paUpgrade">PA Upg</th>
+            <th class="avUpgrade">AV Upg</th>
             <th>Value (GP)</th>
             <th>Seasons</th>
             <th>Rehire Price</th>
-            </tr>
+          </tr>
         </thead>
         <tbody>
-            <!-- Player rows will be added here -->
+          <!-- Player rows will be added here -->
         </tbody>
-        </table>
+      </table>
     </div>
   </div>
 
@@ -136,7 +110,6 @@
       "Elven Union": 50000,
       "Goblins": 60000,
       "Halflings": 60000,
-      "High Elves": 50000,
       "Humans": 50000,
       "Imperial Nobility": 70000,
       "Lizardmen": 60000,
@@ -146,14 +119,11 @@
       "Orcs": 60000,
       "Shambling Undead": 70000,
       "Skaven": 50000,
-      "Snotlings": 60000,
-      "Tomb Kings": 70000,
       "Underworld Denizens": 70000,
-      "Vampires": 70000,
       "Wood Elves": 50000
     };
     
-    // Upgrade cost constants (from your provided array):
+    // Upgrade cost constants:
     const chosenPrimaryGP = 20000, chosenPrimarySPP = 6;
     const chosenSecondaryGP = 40000, chosenSecondarySPP = 12;
     const randomPrimaryGP = 10000, randomPrimarySPP = 3;
@@ -173,8 +143,8 @@
       let draws = parseInt(document.getElementById("draws").value) || 0;
       let bonus = (gamesPlayed * 20000) + (wins * 20000) + (draws * 10000);
       let totalBudget = baseBudget + treasuryInput + bonus;
-      totalBudget = Math.min(totalBudget,1300000);
-
+      totalBudget = Math.min(totalBudget, 1300000); // Cap the budget
+      
       let assistants = parseInt(document.getElementById("assistants").value) || 0;
       let cheerleaders = parseInt(document.getElementById("cheerleaders").value) || 0;
       let apothecaryCost = document.getElementById("apothecary").checked ? 50000 : 0;
@@ -182,16 +152,16 @@
       
       // Reroll cost determined by team type.
       const teamType = document.getElementById("teamType").value;
-      const rerollCostPer = teamRerollCosts[teamType]*2 || 0;
+      const rerollCostPer = (teamRerollCosts[teamType] * 2) || 0;
       let rerolls = parseInt(document.getElementById("rerolls").value) || 0;
       let totalRerollCost = rerollCostPer * rerolls;
       
-      // Sum up player costs from the team sheet.
+      // Sum up player rehire prices from the team sheet.
       let totalPlayerCost = 0;
       const rows = document.getElementById('teamSheet').querySelectorAll('tbody tr');
       rows.forEach(row => {
-        let playerCost = parseInt(row.querySelector('.value').value) || 0;
-        totalPlayerCost += playerCost;
+        let playerRehire = parseInt(row.querySelector('.rehirePrice').value) || 0;
+        totalPlayerCost += playerRehire;
       });
       
       let remainingBudget = totalBudget - staffCost - totalRerollCost - totalPlayerCost;
@@ -200,12 +170,11 @@
         `Total Budget: ${totalBudget} gold\n` +
         `Staff Cost: ${staffCost} gold\n` +
         `Rerolls Cost: ${totalRerollCost} gold\n` +
-        `Total Player Cost: ${totalPlayerCost} gold\n` +
+        `Total Player Cost (Rehire Price): ${totalPlayerCost} gold\n` +
         `Remaining Treasury: ${remainingBudget} gold`;
     }
     
     // When a player is selected, auto-fill the base cost, starting skills, and stat fields.
-    // Also store the numeric base stat and any “+” suffix.
     function updatePositional(selectElement) {
       const selectedOption = selectElement.options[selectElement.selectedIndex];
       const cost = parseInt(selectedOption.getAttribute('data-cost')) || 0;
@@ -216,7 +185,7 @@
       const paStr = selectedOption.getAttribute('data-pa') || '';
       const avStr = selectedOption.getAttribute('data-av') || '';
       
-      // Function to parse a stat string into numeric part and plus.
+      // Parse stat string into numeric part and plus.
       const parseStat = (statStr) => {
         let num = parseInt(statStr) || 0;
         let plus = statStr.includes('+') ? '+' : '';
@@ -240,7 +209,6 @@
         const field = row.querySelector(selector);
         field.dataset.base = data.num;
         field.dataset.plus = data.plus;
-        // Initially effective stat equals base stat plus zero upgrade.
         field.value = data.num + data.plus;
       };
       setStatField('.ma', maData);
@@ -252,7 +220,7 @@
       recalcRow(row);
     }
     
-    // Recalculate the player's total GP value, rehire price, and effective stats.
+    // Recalculate the player's total GP value, rehire price, effective stats, and update level.
     function recalcRow(row) {
       const valueInput = row.querySelector('.value');
       const seasonsInput = row.querySelector('.seasons');
@@ -269,7 +237,6 @@
       const paUp = parseInt(row.querySelector('.paUpgrade').value) || 0;
       const avUp = parseInt(row.querySelector('.avUpgrade').value) || 0;
       
-      // For cost calculations, negative upgrades count as zero.
       const cpCost = Math.max(chosenPrimary, 0) * chosenPrimaryGP;
       const csCost = Math.max(chosenSecondary, 0) * chosenSecondaryGP;
       const rpCost = Math.max(randomPrimary, 0) * randomPrimaryGP;
@@ -285,7 +252,7 @@
       const totalGP = baseValue + additionalGP;
       valueInput.value = totalGP;
       
-      // Update effective stats: effective = base stat + upgrade (even if negative)
+      // Update effective stats.
       const updateEffectiveStat = (selector, upgrade) => {
         const field = row.querySelector(selector);
         const base = parseInt(field.dataset.base) || 0;
@@ -298,8 +265,21 @@
       updateEffectiveStat('.pa', paUp);
       updateEffectiveStat('.av', avUp);
       
-      const seasons = parseInt(seasonsInput.value) || 0;
+      const seasons = Math.max(parseInt(seasonsInput.value) || 0, 0);
       rehirePriceInput.value = totalGP + (seasons * 20000);
+      
+      // Update Level automatically.
+      const totalSPP = (Math.max(chosenPrimary,0) * chosenPrimarySPP) +
+                       (Math.max(chosenSecondary,0) * chosenSecondarySPP) +
+                       (Math.max(randomPrimary,0) * randomPrimarySPP) +
+                       (Math.max(randomSecondary,0) * randomSecondarySPP) +
+                       (Math.max(maUp,0) * maUpgradeSPP) +
+                       (Math.max(stUp,0) * stUpgradeSPP) +
+                       (Math.max(agUp,0) * agUpgradeSPP) +
+                       (Math.max(paUp,0) * paUpgradeSPP) +
+                       (Math.max(avUp,0) * avUpgradeSPP);
+      const level = 1 + Math.floor(totalSPP / 10);
+      row.querySelector('.level').value = level;
     }
     
     // Adds a new player row.
@@ -307,7 +287,6 @@
       const tableBody = document.getElementById('teamSheet').querySelector('tbody');
       const row = document.createElement('tr');
       
-      // Helper to create an input cell.
       function createInputCell(type, className, readOnly = false) {
         const td = document.createElement('td');
         const input = document.createElement('input');
@@ -316,12 +295,12 @@
         if (readOnly) input.readOnly = true;
         if (['chosenPrimary','chosenSecondary','randomPrimary','randomSecondary','maUpgrade','stUpgrade','agUpgrade','paUpgrade','avUpgrade','seasons'].includes(className)) {
           input.addEventListener('change', () => recalcRow(row));
+          if(className === 'seasons') { input.min = "0"; }
         }
         td.appendChild(input);
         return td;
       }
       
-      // Create a select cell for the Positional dropdown.
       function createSelectCell() {
         const td = document.createElement('td');
         td.innerHTML = `
@@ -451,63 +430,61 @@
                 <option value="Ogre" data-cost="140000" data-starting="Bone Head, Loner (4+), Mighty Blow (+1), Thick Skull, Throw Team-mate" data-ma="5" data-st="5" data-ag="4+" data-pa="5+" data-av="10+">Ogre (140k)</option>
             </optgroup>
                 <optgroup label="Orc">
-                <option value="Black Orc Blocker" data-cost="80,000" data-starting="Block" data-ma="5" data-st="4" data-ag="3+" data-pa="4+" data-av="9+">Black Orc Blocker (80k)</option>
-                <option value="Blitzer" data-cost="90,000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Blitzer (90k)</option>
-                <option value="Thrower" data-cost="70,000" data-starting="Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (70k)</option>
-                <option value="Goblin" data-cost="40,000" data-starting="Dodge, Right Stuff, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
+                <option value="Black Orc Blocker" data-cost="80000" data-starting="Block" data-ma="5" data-st="4" data-ag="3+" data-pa="4+" data-av="9+">Black Orc Blocker (80k)</option>
+                <option value="Blitzer" data-cost="90000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Blitzer (90k)</option>
+                <option value="Thrower" data-cost="70000" data-starting="Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (70k)</option>
+                <option value="Goblin" data-cost="40000" data-starting="Dodge, Right Stuff, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
             </optgroup>
             <optgroup label="Shambling Undead">
-                <option value="Zombie" data-cost="40,000" data-starting="None" data-ma="5" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Zombie (40k)</option>
-                <option value="Skeleton" data-cost="50,000" data-starting="None" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Skeleton (50k)</option>
-                <option value="Ghoul" data-cost="70,000" data-starting="Dodge" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Ghoul (70k)</option>
-                <option value="Wight" data-cost="100,000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Wight (100k)</option>
-                <option value="Mummy" data-cost="120,000" data-starting="Mighty Blow (+1), Regeneration" data-ma="4" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Mummy (120k)</option>
+                <option value="Zombie" data-cost="40000" data-starting="None" data-ma="5" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Zombie (40k)</option>
+                <option value="Skeleton" data-cost="50000" data-starting="None" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Skeleton (50k)</option>
+                <option value="Ghoul" data-cost="70000" data-starting="Dodge" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Ghoul (70k)</option>
+                <option value="Wight" data-cost="100000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Wight (100k)</option>
+                <option value="Mummy" data-cost="120000" data-starting="Mighty Blow (+1), Regeneration" data-ma="4" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Mummy (120k)</option>
             </optgroup>
             <optgroup label="Underworld">
-                <option value="Underworld Lineman" data-cost="50,000" data-starting="None" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Underworld Lineman (50k)</option>
-                <option value="Thrower" data-cost="70,000" data-starting="Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (70k)</option>
-                <option value="Gutter Runner" data-cost="80,000" data-starting="Dodge, Stunty" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Gutter Runner (80k)</option>
-                <option value="Blitzer" data-cost="90,000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Blitzer (90k)</option>
-                <option value="Troll" data-cost="115,000" data-starting="Loner (4+), Always Hungry, Mighty Blow (+1), Projectile Vomit, Really Stupid, Regeneration, Throw Team-Mate" data-ma="4" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Troll (115k)</option>
-                <option value="Skaven" data-cost="50,000" data-starting="Animosity (teammates)" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Skaven (50k)</option>
-                <option value="Goblin" data-cost="40,000" data-starting="Dodge, Right Stuff, Stunty, Animosity (teammates)" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
+                <option value="Underworld Lineman" data-cost="50000" data-starting="None" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Underworld Lineman (50k)</option>
+                <option value="Thrower" data-cost="70000" data-starting="Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (70k)</option>
+                <option value="Gutter Runner" data-cost="80000" data-starting="Dodge, Stunty" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Gutter Runner (80k)</option>
+                <option value="Blitzer" data-cost="90000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Blitzer (90k)</option>
+                <option value="Troll" data-cost="115000" data-starting="Loner (4+), Always Hungry, Mighty Blow (+1), Projectile Vomit, Really Stupid, Regeneration, Throw Team-Mate" data-ma="4" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Troll (115k)</option>
+                <option value="Skaven" data-cost="50000" data-starting="Animosity (teammates)" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Skaven (50k)</option>
+                <option value="Goblin" data-cost="40000" data-starting="Dodge, Right Stuff, Stunty, Animosity (teammates)" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
             </optgroup>
-            </select>
-
+          </select>
         `;
         return td;
       }
       
-      // Build row cells in order.
       const cells = [];
-      cells.push(createInputCell('number', 'level'));                     // 1. Level
-      cells.push(createInputCell('text', 'name'));                          // 2. Name
-      cells.push(createSelectCell());                                       // 3. Positional
-      cells.push(createInputCell('text', 'skills'));                        // 4. Skills
-      cells.push(createInputCell('text', 'startingSkills', true));          // 5. Starting Skills
+      cells.push(createInputCell('number', 'level', true));            // 1. Level (read-only)
+      cells.push(createInputCell('text', 'name'));                         // 2. Name
+      cells.push(createSelectCell());                                      // 3. Positional
+      cells.push(createInputCell('text', 'skills'));                       // 4. Skills
+      cells.push(createInputCell('text', 'startingSkills', true));         // 5. Starting Skills
       // 6-10. Stat columns (read-only)
       cells.push(createInputCell('text', 'ma', true));
       cells.push(createInputCell('text', 'st', true));
       cells.push(createInputCell('text', 'ag', true));
       cells.push(createInputCell('text', 'pa', true));
       cells.push(createInputCell('text', 'av', true));
-      cells.push(createInputCell('text', 'injury'));                        // 11. Injury
-      cells.push(createInputCell('number', 'chosenPrimary'));               // 12. Chosen Primary Skills
-      cells.push(createInputCell('number', 'chosenSecondary'));             // 13. Chosen Secondary Skills
-      cells.push(createInputCell('number', 'randomPrimary'));               // 14. Random Primary Skills
-      cells.push(createInputCell('number', 'randomSecondary'));             // 15. Random Secondary Skills
+      cells.push(createInputCell('text', 'injury'));                       // 11. Injury
+      cells.push(createInputCell('number', 'chosenPrimary'));              // 12. Chosen Primary Skills
+      cells.push(createInputCell('number', 'chosenSecondary'));            // 13. Chosen Secondary Skills
+      cells.push(createInputCell('number', 'randomPrimary'));              // 14. Random Primary Skills
+      cells.push(createInputCell('number', 'randomSecondary'));            // 15. Random Secondary Skills
       // 16-20. Stat Upgrade columns
       cells.push(createInputCell('number', 'maUpgrade'));
       cells.push(createInputCell('number', 'stUpgrade'));
       cells.push(createInputCell('number', 'agUpgrade'));
       cells.push(createInputCell('number', 'paUpgrade'));
       cells.push(createInputCell('number', 'avUpgrade'));
-      cells.push(createInputCell('number', 'value', true));                 // 21. Value (GP) (read-only)
-      cells.push(createInputCell('number', 'seasons'));                     // 22. Seasons
-      cells.push(createInputCell('number', 'rehirePrice', true));           // 23. Rehire Price (read-only)
+      cells.push(createInputCell('number', 'value', true));                // 21. Value (GP) (read-only)
+      cells.push(createInputCell('number', 'seasons'));                    // 22. Seasons
+      cells.push(createInputCell('number', 'rehirePrice', true));          // 23. Rehire Price (read-only)
       
       cells.forEach(cell => row.appendChild(cell));
-      tableBody.appendChild(row);
+      document.getElementById('teamSheet').querySelector('tbody').appendChild(row);
     }
   </script>
 </body>
