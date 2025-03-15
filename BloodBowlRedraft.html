@@ -70,13 +70,13 @@
             <th>Name</th>
             <th>Positional</th>
             <th class="skills">Skills</th>
-            <th>Starting Skills</th>
+            <th class="starting-skills">Starting Skills</th>
             <th class="ma">MA</th>
             <th class="st">ST</th>
             <th class="ag">AG</th>
             <th class="pa">PA</th>
             <th class="av">AV</th>
-            <th>Injury</th>
+            <th class="injuries">Injury</th>
             <th class="chosenPrimary">Chosen Prim</th>
             <th class="chosenSecondary">Chosen Sec</th>
             <th class="randomPrimary">Rand Prim</th>
@@ -87,7 +87,7 @@
             <th class="paUpgrade">PA Upg</th>
             <th class="avUpgrade">AV Upg</th>
             <th>Value (GP)</th>
-            <th>Seasons</th>
+            <th class="seasons">Seasons</th>
             <th>Rehire Price</th>
           </tr>
         </thead>
@@ -269,16 +269,21 @@
       rehirePriceInput.value = totalGP + (seasons * 20000);
       
       // Update Level automatically.
-      const totalSPP = (Math.max(chosenPrimary,0) * chosenPrimarySPP) +
-                       (Math.max(chosenSecondary,0) * chosenSecondarySPP) +
-                       (Math.max(randomPrimary,0) * randomPrimarySPP) +
-                       (Math.max(randomSecondary,0) * randomSecondarySPP) +
-                       (Math.max(maUp,0) * maUpgradeSPP) +
-                       (Math.max(stUp,0) * stUpgradeSPP) +
-                       (Math.max(agUp,0) * agUpgradeSPP) +
-                       (Math.max(paUp,0) * paUpgradeSPP) +
-                       (Math.max(avUp,0) * avUpgradeSPP);
-      const level = 1 + Math.floor(totalSPP / 10);
+
+      const totalSkills = Math.max(chosenPrimary, 0) +
+                        Math.max(chosenSecondary, 0) +
+                        Math.max(randomPrimary, 0) +
+                        Math.max(randomSecondary, 0) +
+                        Math.max(maUp, 0) +
+                        Math.max(stUp, 0) +
+                        Math.max(agUp, 0) +
+                        Math.max(paUp, 0) +
+                        Math.max(avUp, 0);
+    const level = 1 + totalSkills;
+
+
+
+
       row.querySelector('.level').value = level;
     }
     
