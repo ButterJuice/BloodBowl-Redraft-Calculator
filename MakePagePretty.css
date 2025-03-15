@@ -1,0 +1,96 @@
+/* Global Styles */
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 20px;
+    background: #f9f9f9;
+    color: #333;
+  }
+  
+  /* Headings */
+  h1, h2 {
+    color: #222;
+    margin-bottom: 10px;
+  }
+  
+  /* Section containers */
+  .section {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Labels & Inputs */
+  label {
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 10px;
+  }
+  
+  input[type="number"],
+  input[type="text"],
+  select {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 5px 8px;
+    margin: 5px 0;
+    font-size: 14px;
+  }
+  th{
+    padding-top: 4px;
+    padding-right: 1px;
+    padding-bottom: 4px;
+    padding-left: 1px;
+  }
+  input[readonly] {
+    background-color: #eee;
+  }
+  
+  /* Buttons */
+  button {
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 3px;
+    color: #fff;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  /* Table container for horizontal scroll */
+  .table-container {
+    overflow-x: auto;
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+  }
+  
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    min-width: 1200px;  /* Ensure horizontal scrolling on smaller screens */
+  }
+  
+  th, td {
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <link rel="stylesheet" href="MakePagePretty.css">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blood Bowl Redraft Calculator & Team Sheet</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    table, th, td {
+      border: 1px solid #aaa;
+      border-collapse: collapse;
+      padding: 4px;
+      text-align: center;
+    }
+    input[type="number"], input[type="text"] {
+      width: 70px;
+    }
+    input[readonly] {
+      background-color: #f3f3f3;
+    }
+    select {
+      width: 160px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    th {
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Blood Bowl Redraft Calculator</h1>
+  <div class="section">
+    <!-- Team type selection -->
+    <label for="teamType">Team Type:</label>
+    <select id="teamType">
+      <option value="Amazons">Amazons</option>
+      <option value="Black Orcs">Black Orcs</option>
+      <option value="Chaos Chosen">Chaos Chosen</option>
+      <option value="Chaos Renegades">Chaos Renegades</option>
+      <option value="Dark Elves">Dark Elves</option>
+      <option value="Dwarfs">Dwarfs</option>
+      <option value="Elven Union">Elven Union</option>
+      <option value="Goblins">Goblins</option>
+      <option value="Halflings">Halflings</option>
+      <option value="Humans">Humans</option>
+      <option value="Imperial Nobility">Imperial Nobility</option>
+      <option value="Lizardmen">Lizardmen</option>
+      <option value="Necromantic Horror">Necromantic Horror</option>
+      <option value="Norse">Norse</option>
+      <option value="Old World Alliance">Old World Alliance</option>
+      <option value="Orcs">Orcs</option>
+      <option value="Shambling Undead">Shambling Undead</option>
+      <option value="Skaven">Skaven</option>
+      <option value="Underworld Denizens">Underworld Denizens</option>
+      <option value="Wood Elves">Wood Elves</option>
+    </select><br /><br />
+
+    <!-- Treasury and bonus inputs -->
+    <label for="treasury">Previous Treasury:</label>
+    <input type="number" id="treasury" /><br />
+    <label for="gamesPlayed">Games Played Last Season:</label>
+    <input type="number" id="gamesPlayed" /><br />
+    <label for="wins">Wins:</label>
+    <input type="number" id="wins" /><br />
+    <label for="draws">Draws:</label>
+    <input type="number" id="draws" /><br />
+    <!-- Rerolls input remains; cost is determined by team type -->
+    <label for="rerolls">Team Rerolls to Keep:</label>
+    <input type="number" id="rerolls" /><br />
+    <label for="assistants">Assistant Coaches:</label>
+    <input type="number" id="assistants" /><br />
+    <label for="cheerleaders">Cheerleaders:</label>
+    <input type="number" id="cheerleaders" /><br />
+    <label for="apothecary">Keep Apothecary (50k)?</label>
+    <input type="checkbox" id="apothecary" /><br /><br />
+    <button onclick="calculateRedraft()">Calculate Redraft</button>
+    <pre id="result"></pre>
+  </div>
+
+  <h2>Team Sheet</h2>
+  <div class="section">
+    <button onclick="addPlayerRow()">Add Player</button>
+    <div class="table-container">
+        <table id="teamSheet">
+        <thead>
+            <tr>
+            <th>Level</th>
+            <th>Name</th>
+            <th>Positional</th>
+            <th>Skills</th>
+            <th>Starting Skills</th>
+            <th>MA</th>
+            <th>ST</th>
+            <th>AG</th>
+            <th>PA</th>
+            <th>AV</th>
+            <th>Injury</th>
+            <th>Chosen Prim</th>
+            <th>Chosen Sec</th>
+            <th>Rand Prim</th>
+            <th>Rand Sec</th>
+            <th>MA Upg</th>
+            <th>ST Upg</th>
+            <th>AG Upg</th>
+            <th>PA Upg</th>
+            <th>AV Upg</th>
+            <th>Value (GP)</th>
+            <th>Seasons</th>
+            <th>Rehire Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Player rows will be added here -->
+        </tbody>
+        </table>
+    </div>
+  </div>
+
+  <script>
+    // Team Reroll costs (in GP) per team type.
+    const teamRerollCosts = {
+      "Amazons": 60000,
+      "Black Orcs": 60000,
+      "Chaos Chosen": 60000,
+      "Chaos Renegades": 70000,
+      "Dark Elves": 50000,
+      "Dwarfs": 50000,
+      "Elven Union": 50000,
+      "Goblins": 60000,
+      "Halflings": 60000,
+      "High Elves": 50000,
+      "Humans": 50000,
+      "Imperial Nobility": 70000,
+      "Lizardmen": 60000,
+      "Necromantic Horror": 70000,
+      "Norse": 60000,
+      "Old World Alliance": 70000,
+      "Orcs": 60000,
+      "Shambling Undead": 70000,
+      "Skaven": 50000,
+      "Snotlings": 60000,
+      "Tomb Kings": 70000,
+      "Underworld Denizens": 70000,
+      "Vampires": 70000,
+      "Wood Elves": 50000
+    };
+    
+    // Upgrade cost constants (from your provided array):
+    const chosenPrimaryGP = 20000, chosenPrimarySPP = 6;
+    const chosenSecondaryGP = 40000, chosenSecondarySPP = 12;
+    const randomPrimaryGP = 10000, randomPrimarySPP = 3;
+    const randomSecondaryGP = 20000, randomSecondarySPP = 6;
+    const maUpgradeGP = 20000, maUpgradeSPP = 8;
+    const stUpgradeGP = 80000, stUpgradeSPP = 18;
+    const agUpgradeGP = 40000, agUpgradeSPP = 16;
+    const paUpgradeGP = 20000, paUpgradeSPP = 8;
+    const avUpgradeGP = 10000, avUpgradeSPP = 8;
+    
+    // Redraft Calculator function.
+    function calculateRedraft() {
+      let baseBudget = 1000000;
+      let treasuryInput = parseInt(document.getElementById("treasury").value) || 0;
+      let gamesPlayed = parseInt(document.getElementById("gamesPlayed").value) || 0;
+      let wins = parseInt(document.getElementById("wins").value) || 0;
+      let draws = parseInt(document.getElementById("draws").value) || 0;
+      let bonus = (gamesPlayed * 20000) + (wins * 20000) + (draws * 10000);
+      let totalBudget = baseBudget + treasuryInput + bonus;
+      totalBudget = Math.min(totalBudget,1300000);
+
+      let assistants = parseInt(document.getElementById("assistants").value) || 0;
+      let cheerleaders = parseInt(document.getElementById("cheerleaders").value) || 0;
+      let apothecaryCost = document.getElementById("apothecary").checked ? 50000 : 0;
+      let staffCost = (assistants + cheerleaders) * 10000 + apothecaryCost;
+      
+      // Reroll cost determined by team type.
+      const teamType = document.getElementById("teamType").value;
+      const rerollCostPer = teamRerollCosts[teamType]*2 || 0;
+      let rerolls = parseInt(document.getElementById("rerolls").value) || 0;
+      let totalRerollCost = rerollCostPer * rerolls;
+      
+      // Sum up player costs from the team sheet.
+      let totalPlayerCost = 0;
+      const rows = document.getElementById('teamSheet').querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        let playerCost = parseInt(row.querySelector('.value').value) || 0;
+        totalPlayerCost += playerCost;
+      });
+      
+      let remainingBudget = totalBudget - staffCost - totalRerollCost - totalPlayerCost;
+      
+      document.getElementById("result").innerText = 
+        `Total Budget: ${totalBudget} gold\n` +
+        `Staff Cost: ${staffCost} gold\n` +
+        `Rerolls Cost: ${totalRerollCost} gold\n` +
+        `Total Player Cost: ${totalPlayerCost} gold\n` +
+        `Remaining Treasury: ${remainingBudget} gold`;
+    }
+    
+    // When a player is selected, auto-fill the base cost, starting skills, and stat fields.
+    // Also store the numeric base stat and any “+” suffix.
+    function updatePositional(selectElement) {
+      const selectedOption = selectElement.options[selectElement.selectedIndex];
+      const cost = parseInt(selectedOption.getAttribute('data-cost')) || 0;
+      const startingSkills = selectedOption.getAttribute('data-starting') || '';
+      const maStr = selectedOption.getAttribute('data-ma') || '';
+      const stStr = selectedOption.getAttribute('data-st') || '';
+      const agStr = selectedOption.getAttribute('data-ag') || '';
+      const paStr = selectedOption.getAttribute('data-pa') || '';
+      const avStr = selectedOption.getAttribute('data-av') || '';
+      
+      // Function to parse a stat string into numeric part and plus.
+      const parseStat = (statStr) => {
+        let num = parseInt(statStr) || 0;
+        let plus = statStr.includes('+') ? '+' : '';
+        return { num, plus };
+      };
+      const maData = parseStat(maStr);
+      const stData = parseStat(stStr);
+      const agData = parseStat(agStr);
+      const paData = parseStat(paStr);
+      const avData = parseStat(avStr);
+      
+      const row = selectElement.closest('tr');
+      const valueInput = row.querySelector('.value');
+      valueInput.dataset.baseValue = cost;
+      valueInput.value = cost;
+      
+      row.querySelector('.startingSkills').value = startingSkills;
+      
+      // Set base stats and store in dataset.
+      const setStatField = (selector, data) => {
+        const field = row.querySelector(selector);
+        field.dataset.base = data.num;
+        field.dataset.plus = data.plus;
+        // Initially effective stat equals base stat plus zero upgrade.
+        field.value = data.num + data.plus;
+      };
+      setStatField('.ma', maData);
+      setStatField('.st', stData);
+      setStatField('.ag', agData);
+      setStatField('.pa', paData);
+      setStatField('.av', avData);
+      
+      recalcRow(row);
+    }
+    
+    // Recalculate the player's total GP value, rehire price, and effective stats.
+    function recalcRow(row) {
+      const valueInput = row.querySelector('.value');
+      const seasonsInput = row.querySelector('.seasons');
+      const rehirePriceInput = row.querySelector('.rehirePrice');
+      
+      // Get upgrade values (if negative, cost uses 0).
+      const chosenPrimary = parseInt(row.querySelector('.chosenPrimary').value) || 0;
+      const chosenSecondary = parseInt(row.querySelector('.chosenSecondary').value) || 0;
+      const randomPrimary = parseInt(row.querySelector('.randomPrimary').value) || 0;
+      const randomSecondary = parseInt(row.querySelector('.randomSecondary').value) || 0;
+      const maUp = parseInt(row.querySelector('.maUpgrade').value) || 0;
+      const stUp = parseInt(row.querySelector('.stUpgrade').value) || 0;
+      const agUp = parseInt(row.querySelector('.agUpgrade').value) || 0;
+      const paUp = parseInt(row.querySelector('.paUpgrade').value) || 0;
+      const avUp = parseInt(row.querySelector('.avUpgrade').value) || 0;
+      
+      // For cost calculations, negative upgrades count as zero.
+      const cpCost = Math.max(chosenPrimary, 0) * chosenPrimaryGP;
+      const csCost = Math.max(chosenSecondary, 0) * chosenSecondaryGP;
+      const rpCost = Math.max(randomPrimary, 0) * randomPrimaryGP;
+      const rsCost = Math.max(randomSecondary, 0) * randomSecondaryGP;
+      const maCost = Math.max(maUp, 0) * maUpgradeGP;
+      const stCost = Math.max(stUp, 0) * stUpgradeGP;
+      const agCost = Math.max(agUp, 0) * agUpgradeGP;
+      const paCost = Math.max(paUp, 0) * paUpgradeGP;
+      const avCost = Math.max(avUp, 0) * avUpgradeGP;
+      
+      const baseValue = parseInt(valueInput.dataset.baseValue) || 0;
+      const additionalGP = cpCost + csCost + rpCost + rsCost + maCost + stCost + agCost + paCost + avCost;
+      const totalGP = baseValue + additionalGP;
+      valueInput.value = totalGP;
+      
+      // Update effective stats: effective = base stat + upgrade (even if negative)
+      const updateEffectiveStat = (selector, upgrade) => {
+        const field = row.querySelector(selector);
+        const base = parseInt(field.dataset.base) || 0;
+        const effective = base + upgrade;
+        field.value = effective + (field.dataset.plus || '');
+      };
+      updateEffectiveStat('.ma', maUp);
+      updateEffectiveStat('.st', stUp);
+      updateEffectiveStat('.ag', agUp);
+      updateEffectiveStat('.pa', paUp);
+      updateEffectiveStat('.av', avUp);
+      
+      const seasons = parseInt(seasonsInput.value) || 0;
+      rehirePriceInput.value = totalGP + (seasons * 20000);
+    }
+    
+    // Adds a new player row.
+    function addPlayerRow() {
+      const tableBody = document.getElementById('teamSheet').querySelector('tbody');
+      const row = document.createElement('tr');
+      
+      // Helper to create an input cell.
+      function createInputCell(type, className, readOnly = false) {
+        const td = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = type;
+        input.className = className;
+        if (readOnly) input.readOnly = true;
+        if (['chosenPrimary','chosenSecondary','randomPrimary','randomSecondary','maUpgrade','stUpgrade','agUpgrade','paUpgrade','avUpgrade','seasons'].includes(className)) {
+          input.addEventListener('change', () => recalcRow(row));
+        }
+        td.appendChild(input);
+        return td;
+      }
+      
+      // Create a select cell for the Positional dropdown.
+      function createSelectCell() {
+        const td = document.createElement('td');
+        td.innerHTML = `
+          <select class="positional" onchange="updatePositional(this)">
+            <option value="">Select a player</option>
+            <optgroup label="Amazons">
+              <option value="Lineman" data-cost="50000" data-starting="Dodge" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Lineman (50k)</option>
+              <option value="Thrower" data-cost="75000" data-starting="Dodge, Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (75k)</option>
+              <option value="Catcher" data-cost="85000" data-starting="Dodge, Catch" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Catcher (85k)</option>
+              <option value="Blitzer" data-cost="90000" data-starting="Dodge, Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Blitzer (90k)</option>
+            </optgroup>
+            <optgroup label="Chaos Chosen">
+              <option value="Beastman" data-cost="60000" data-starting="Horns" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Beastman (60k)</option>
+              <option value="Chosen Blocker" data-cost="100000" data-starting="None" data-ma="5" data-st="4" data-ag="4+" data-pa="5+" data-av="10+">Chosen Blocker (100k)</option>
+              <option value="Minotaur" data-cost="150000" data-starting="Loner (4+), Frenzy, Horns, Mighty Blow (+1), Thick Skull, Unchannelled Fury" data-ma="5" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Minotaur (150k)</option>
+            </optgroup>
+            <optgroup label="Chaos Renegade">
+              <option value="Lineman" data-cost="50000" data-starting="None" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Lineman (50k)</option>
+              <option value="Thrower" data-cost="75000" data-starting="Pass, Animosity (teammates)" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="9+">Thrower (75k)</option>
+              <option value="Catcher" data-cost="85000" data-starting="Catch, Animosity (teammates)" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Catcher (85k)</option>
+              <option value="Ogre" data-cost="140000" data-starting="Loner (4+), Bone Head, Mighty Blow (+1), Thick Skull, Throw Team-Mate" data-ma="5" data-st="5" data-ag="4+" data-pa="-" data-av="10+">Ogre (140k)</option>
+              <option value="Minotaur" data-cost="150000" data-starting="Loner (4+), Frenzy, Horns, Mighty Blow (+1), Thick Skull, Unchannelled Fury" data-ma="5" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Minotaur (150k)</option>
+              <option value="Troll" data-cost="115000" data-starting="Loner (4+), Always Hungry, Mighty Blow (+1), Projectile Vomit, Really Stupid, Regeneration, Throw Team-Mate" data-ma="4" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Troll (115k)</option>
+              <option value="Dark Elf" data-cost="75000" data-starting="Animosity (teammates)" data-ma="6" data-st="3" data-ag="2+" data-pa="4+" data-av="9+">Dark Elf (75k)</option>
+              <option value="Skaven" data-cost="50000" data-starting="Animosity (teammates)" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Skaven (50k)</option>
+              <option value="Goblin" data-cost="40000" data-starting="Dodge, Right Stuff, Stunty, Animosity (teammates)" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
+            </optgroup>
+            <optgroup label="Dark Elf">
+              <option value="Lineman" data-cost="70000" data-starting="None" data-ma="6" data-st="3" data-ag="2+" data-pa="4+" data-av="9+">Lineman (70k)</option>
+              <option value="Runner" data-cost="80000" data-starting="Dump-Off" data-ma="7" data-st="3" data-ag="2+" data-pa="3+" data-av="8+">Runner (80k)</option>
+              <option value="Assassin" data-cost="85000" data-starting="Shadowing, Stab" data-ma="7" data-st="3" data-ag="2+" data-pa="-" data-av="8+">Assassin (85k)</option>
+              <option value="Blitzer" data-cost="100000" data-starting="Block" data-ma="7" data-st="3" data-ag="2+" data-pa="4+" data-av="9+">Blitzer (100k)</option>
+              <option value="Witch Elf" data-cost="110000" data-starting="Dodge, Frenzy, Jump Up" data-ma="7" data-st="3" data-ag="2+" data-pa="5+" data-av="8+">Witch Elf (110k)</option>
+            </optgroup>
+            <optgroup label="Dwarf">
+              <option value="Blocker" data-cost="70000" data-starting="Block, Tackle, Thick Skull" data-ma="4" data-st="3" data-ag="4+" data-pa="5+" data-av="10+">Blocker (70k)</option>
+              <option value="Runner" data-cost="80000" data-starting="Sure Hands, Thick Skull" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="9+">Runner (80k)</option>
+              <option value="Blitzer" data-cost="90000" data-starting="Block, Thick Skull" data-ma="5" data-st="3" data-ag="3+" data-pa="4+" data-av="10+">Blitzer (90k)</option>
+              <option value="Troll Slayer" data-cost="95000" data-starting="Block, Dauntless, Frenzy, Thick Skull" data-ma="5" data-st="3" data-ag="3+" data-pa="-" data-av="9+">Troll Slayer (95k)</option>
+              <option value="Deathroller" data-cost="170000" data-starting="Loner (4+), Break Tackle, Dirty Player (+2), Juggernaut, Mighty Blow (+1), No Hands, Secret Weapon, Stand Firm, Thick Skull" data-ma="4" data-st="7" data-ag="5+" data-pa="-" data-av="11+">Deathroller (170k)</option>
+            </optgroup>
+            <optgroup label="Elven Union">
+              <option value="Lineman" data-cost="60000" data-starting="None" data-ma="6" data-st="3" data-ag="2+" data-pa="4+" data-av="8+">Lineman (60k)</option>
+              <option value="Thrower" data-cost="75000" data-starting="Pass, Safe Pass" data-ma="6" data-st="3" data-ag="2+" data-pa="2+" data-av="8+">Thrower (75k)</option>
+              <option value="Catcher" data-cost="100000" data-starting="Catch, Dodge" data-ma="8" data-st="2" data-ag="2+" data-pa="3+" data-av="8+">Catcher (100k)</option>
+              <option value="Blitzer" data-cost="115000" data-starting="Block, Side Step" data-ma="7" data-st="3" data-ag="2+" data-pa="4+" data-av="9+">Blitzer (115k)</option>
+            </optgroup>
+            <optgroup label="Goblins">
+              <option value="Lineman" data-cost="40000" data-starting="Dodge, Right Stuff, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Lineman (40k)</option>
+              <option value="Looney" data-cost="50000" data-starting="Chainsaw, Secret Weapon, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="-" data-av="8+">Looney (50k)</option>
+              <option value="Fanatic" data-cost="70000" data-starting="Ball &amp; Chain, No Hands, Secret Weapon, Stunty" data-ma="3" data-st="7" data-ag="5+" data-pa="-" data-av="9+">Fanatic (70k)</option>
+              <option value="Pogoer" data-cost="70000" data-starting="Dodge, Pogo Stick, Stunty" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Pogoer (70k)</option>
+              <option value="Bomber" data-cost="50000" data-starting="Bombardier, Dodge, Secret Weapon, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Bomber (50k)</option>
+              <option value="Ooligan" data-cost="65000" data-starting="Dirty Player (+1), Dodge, Right Stuff, Side Step, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Ooligan (65k)</option>
+              <option value="Troll" data-cost="115000" data-starting="Loner (4+), Always Hungry, Mighty Blow (+1), Projectile Vomit, Really Stupid, Regeneration, Throw Team-Mate" data-ma="4" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Troll (115k)</option>
+            </optgroup>
+            <optgroup label="Wood Elf">
+              <option value="Lineman" data-cost="70000" data-starting="None" data-ma="7" data-st="3" data-ag="2+" data-pa="4+" data-av="8+">Lineman (70k)</option>
+              <option value="Thrower" data-cost="90000" data-starting="Pass" data-ma="7" data-st="3" data-ag="2+" data-pa="2+" data-av="8+">Thrower (90k)</option>
+              <option value="Catcher" data-cost="95000" data-starting="Catch, Dodge" data-ma="8" data-st="2" data-ag="2+" data-pa="3+" data-av="8+">Catcher (95k)</option>
+              <option value="War Dancer" data-cost="125000" data-starting="Block, Dodge, Leap" data-ma="8" data-st="3" data-ag="2+" data-pa="4+" data-av="8+">War Dancer (125k)</option>
+            </optgroup>
+            <optgroup label="Nurgle">
+                <option value="Rotter Lineman" data-cost="35000" data-starting="Decay, Plague Ridden" data-ma="5" data-st="3" data-ag="4+" data-pa="6+" data-av="9+">Rotter Lineman (35k)</option>
+                <option value="Bloater" data-cost="115000" data-starting="Disturbing Presence, Foul Appearance, Plague Ridden, Regeneration" data-ma="4" data-st="4" data-ag="4+" data-pa="6+" data-av="10+">Bloater (115k)</option>
+                <option value="Pestigor" data-cost="75000" data-starting="Horns, Plague Ridden, Regeneration" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Pestigor (75k)</option>
+                <option value="Rotspawn" data-cost="140000" data-starting="Disturbing Presence, Foul Appearance, Loner (4+), Mighty Blow (+1), Plague Ridden, Really Stupid, Regeneration, Tentacles" data-ma="4" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Rotspawn (140k)</option>
+            </optgroup>
+            <optgroup label="Skaven">
+                <option value="Lineman" data-cost="50000" data-starting="None" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Lineman (50k)</option>
+                <option value="Thrower" data-cost="85000" data-starting="Pass, Sure Hands" data-ma="7" data-st="3" data-ag="3+" data-pa="2+" data-av="8+">Thrower (85k)</option>
+                <option value="Gutter Runner" data-cost="85000" data-starting="Dodge" data-ma="9" data-st="2" data-ag="2+" data-pa="4+" data-av="8+">Gutter Runner (85k)</option>
+                <option value="Blitzer" data-cost="90000" data-starting="Block" data-ma="7" data-st="3" data-ag="3+" data-pa="5+" data-av="9+">Blitzer (90k)</option>
+                <option value="Rat Ogre" data-cost="150000" data-starting="Animal Savagery, Frenzy, Loner (4+), Mighty Blow (+1), Prehensile Tail" data-ma="6" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Rat Ogre (150k)</option>
+            </optgroup>
+            <optgroup label="Halflings">
+                <option value="Hopeful" data-cost="30000" data-starting="Dodge, Right Stuff, Stunty" data-ma="5" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Hopeful (30k)</option>
+                <option value="Catcher" data-cost="55000" data-starting="Catch, Dodge, Right Stuff, Sprint, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Catcher (55k)</option>
+                <option value="Hefty" data-cost="50000" data-starting="Dodge, Fend, Stunty" data-ma="5" data-st="2" data-ag="3+" data-pa="3+" data-av="8+">Hefty (50k)</option>
+                <option value="Treeman" data-cost="120000" data-starting="Loner (4+), Mighty Blow (+1), Stand Firm, Strong Arm, Take Root, Thick Skull, Throw Team-Mate, Timber" data-ma="2" data-st="6" data-ag="5+" data-pa="-" data-av="11+">Treeman (120k)</option>
+            </optgroup>
+            <optgroup label="Humans">
+                <option value="Lineman" data-cost="50000" data-starting="None" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Lineman (50k)</option>
+                <option value="Thrower" data-cost="80000" data-starting="Pass, Sure Hands" data-ma="6" data-st="3" data-ag="3+" data-pa="2+" data-av="9+">Thrower (80k)</option>
+                <option value="Catcher" data-cost="65000" data-starting="Catch, Dodge" data-ma="8" data-st="2" data-ag="3+" data-pa="5+" data-av="8+">Catcher (65k)</option>
+                <option value="Blitzer" data-cost="85000" data-starting="Block" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Blitzer (85k)</option>
+                <option value="Ogre" data-cost="140000" data-starting="Loner (4+), Bone Head, Mighty Blow (+1), Thick Skull, Throw Team-Mate" data-ma="5" data-st="5" data-ag="4+" data-pa="5+" data-av="10+">Ogre (140k)</option>
+            </optgroup>
+            <optgroup label="Imperial Nobility">
+                <option value="Retainer Lineman" data-cost="45000" data-starting="Fend" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Retainer Lineman (45k)</option>
+                <option value="Thrower" data-cost="75000" data-starting="Pass, Running Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="9+">Thrower (75k)</option>
+                <option value="Bodyguard" data-cost="90000" data-starting="Wrestle, Stand Firm" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Bodyguard (90k)</option>
+                <option value="Noble Blitzer" data-cost="105000" data-starting="Block, Catch" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Noble Blitzer (105k)</option>
+                <option value="Ogre" data-cost="140000" data-starting="Loner (4+), Bone Head, Mighty Blow (+1), Thick Skull, Throw Team-Mate" data-ma="5" data-st="5" data-ag="4+" data-pa="5+" data-av="10+">Ogre (140k)</option>
+            </optgroup>
+            <optgroup label="Lizardmen">
+                <option value="Skink Runner" data-cost="60000" data-starting="Dodge, Stunty" data-ma="8" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Skink Runner (60k)</option>
+                <option value="Chameleon Skink" data-cost="70000" data-starting="On the Ball, Shadowing, Stunty" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Chameleon Skink (70k)</option>
+                <option value="Saurus Blocker" data-cost="85000" data-starting="None" data-ma="6" data-st="4" data-ag="5+" data-pa="6+" data-av="10+">Saurus Blocker (85k)</option>
+                <option value="Kroxigor" data-cost="140000" data-starting="Loner (4+), Bone Head, Mighty Blow (+1), Prehensile Tail, Thick Skull, Throw Team-Mate" data-ma="6" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Kroxigor (140k)</option>
+            </optgroup>
+                <optgroup label="Necromantic Horror">
+                <option value="Zombie Lineman" data-cost="40000" data-starting="Regeneration" data-ma="4" data-st="3" data-ag="4+" data-pa="5+" data-av="9+">Zombie Lineman (40k)</option>
+                <option value="Ghoul Runner" data-cost="75000" data-starting="Dodge" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Ghoul Runner (75k)</option>
+                <option value="Wraith" data-cost="95000" data-starting="Block, Foul Appearance, No Hands, Regeneration, Sidestep" data-ma="6" data-st="3" data-ag="3+" data-pa="-" data-av="9+">Wraith (95k)</option>
+                <option value="Werewolf" data-cost="125000" data-starting="Claws, Frenzy, Regeneration" data-ma="8" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Werewolf (125k)</option>
+                <option value="Flesh Golem" data-cost="115000" data-starting="Regeneration, Stand Firm, Thick Skull" data-ma="4" data-st="4" data-ag="4+" data-pa="5+" data-av="10+">Flesh Golem (115k)</option>
+            </optgroup>
+            <optgroup label="Norse">
+                <option value="Norse Raider Lineman" data-cost="50000" data-starting="Block, Drunkard" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Norse Raider Lineman (50k)</option>
+                <option value="Norse Thrower" data-cost="70000" data-starting="Block, Drunkard, Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Norse Thrower (70k)</option>
+                <option value="Norse Berserker" data-cost="90000" data-starting="Block, Frenzy, Jump Up" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Norse Berserker (90k)</option>
+                <option value="Norse Runner" data-cost="95000" data-starting="Block, Dauntless" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Norse Runner (95k)</option>
+                <option value="Ulfwerenar" data-cost="105000" data-starting="Frenzy" data-ma="6" data-st="4" data-ag="4+" data-pa="5+" data-av="9+">Ulfwerenar (105k)</option>
+                <option value="Yhetee" data-cost="140000" data-starting="Claws, Disturbing Presence, Frenzy, Lonor (4+), Unchannelled Fury" data-ma="5" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Yhetee (140k)</option>
+            </optgroup>
+            <optgroup label="Old World Alliance">
+                <option value="Human Lineman" data-cost="50000" data-starting="Animosity (Dwarf and Halfling teammates)" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Human Lineman (50k)</option>
+                <option value="Dwarf Blocker" data-cost="70000" data-starting="Block, Tackle, Thick Skull, Animosity (Human and Halfling teammates)" data-ma="4" data-st="3" data-ag="4+" data-pa="5+" data-av="10+">Dwarf Blocker (70k)</option>
+                <option value="Halfling Hopeful" data-cost="30000" data-starting="Dodge, Right Stuff, Stunty, Animosity (Human and Dwarf teammates)" data-ma="5" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Halfling Hopeful (30k)</option>
+                <option value="Human Thrower" data-cost="75000" data-starting="Pass, Sure Hands, Animosity (Dwarf and Halfling teammates)" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="9+">Human Thrower (75k)</option>
+                <option value="Human Catcher" data-cost="65000" data-starting="Catch, Dodge, Animosity (Dwarf and Halfling teammates)" data-ma="8" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Human Catcher (65k)</option>
+                <option value="Human Blitzer" data-cost="85000" data-starting="Block, Animosity (Dwarf and Halfling teammates)" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Human Blitzer (85k)</option>
+                <option value="Dwarf Runner" data-cost="85000" data-starting="Sure Hands, Thick Skull, Animosity (Human and Halfling teammates)" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Dwarf Runner (85k)</option>
+                <option value="Dwarf Blitzer" data-cost="80000" data-starting="Block, Thick Skull, Animosity (Human and Halfling teammates)" data-ma="5" data-st="3" data-ag="3+" data-pa="4+" data-av="10+">Dwarf Blitzer (80k)</option>
+                <option value="Dwarf Troll Slayer" data-cost="95000" data-starting="Block, Dauntless, Frenzy, Thick Skull, Animosity (Human and Halfling teammates)" data-ma="5" data-st="3" data-ag="3+" data-pa="-" data-av="9+">Dwarf Troll Slayer (95k)</option>
+                <option value="Ogre" data-cost="140000" data-starting="Bone Head, Loner (4+), Mighty Blow (+1), Thick Skull, Throw Team-mate" data-ma="5" data-st="5" data-ag="4+" data-pa="5+" data-av="10+">Ogre (140k)</option>
+            </optgroup>
+                <optgroup label="Orc">
+                <option value="Black Orc Blocker" data-cost="80,000" data-starting="Block" data-ma="5" data-st="4" data-ag="3+" data-pa="4+" data-av="9+">Black Orc Blocker (80k)</option>
+                <option value="Blitzer" data-cost="90,000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="9+">Blitzer (90k)</option>
+                <option value="Thrower" data-cost="70,000" data-starting="Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (70k)</option>
+                <option value="Goblin" data-cost="40,000" data-starting="Dodge, Right Stuff, Stunty" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
+            </optgroup>
+            <optgroup label="Shambling Undead">
+                <option value="Zombie" data-cost="40,000" data-starting="None" data-ma="5" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Zombie (40k)</option>
+                <option value="Skeleton" data-cost="50,000" data-starting="None" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Skeleton (50k)</option>
+                <option value="Ghoul" data-cost="70,000" data-starting="Dodge" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Ghoul (70k)</option>
+                <option value="Wight" data-cost="100,000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Wight (100k)</option>
+                <option value="Mummy" data-cost="120,000" data-starting="Mighty Blow (+1), Regeneration" data-ma="4" data-st="5" data-ag="4+" data-pa="-" data-av="9+">Mummy (120k)</option>
+            </optgroup>
+            <optgroup label="Underworld">
+                <option value="Underworld Lineman" data-cost="50,000" data-starting="None" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Underworld Lineman (50k)</option>
+                <option value="Thrower" data-cost="70,000" data-starting="Pass" data-ma="6" data-st="3" data-ag="3+" data-pa="3+" data-av="8+">Thrower (70k)</option>
+                <option value="Gutter Runner" data-cost="80,000" data-starting="Dodge, Stunty" data-ma="7" data-st="2" data-ag="3+" data-pa="4+" data-av="7+">Gutter Runner (80k)</option>
+                <option value="Blitzer" data-cost="90,000" data-starting="Block" data-ma="6" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Blitzer (90k)</option>
+                <option value="Troll" data-cost="115,000" data-starting="Loner (4+), Always Hungry, Mighty Blow (+1), Projectile Vomit, Really Stupid, Regeneration, Throw Team-Mate" data-ma="4" data-st="5" data-ag="5+" data-pa="-" data-av="10+">Troll (115k)</option>
+                <option value="Skaven" data-cost="50,000" data-starting="Animosity (teammates)" data-ma="7" data-st="3" data-ag="3+" data-pa="4+" data-av="8+">Skaven (50k)</option>
+                <option value="Goblin" data-cost="40,000" data-starting="Dodge, Right Stuff, Stunty, Animosity (teammates)" data-ma="6" data-st="2" data-ag="3+" data-pa="4+" data-av="8+">Goblin (40k)</option>
+            </optgroup>
+            </select>
+
+        `;
+        return td;
+      }
+      
+      // Build row cells in order.
+      const cells = [];
+      cells.push(createInputCell('number', 'level'));                     // 1. Level
+      cells.push(createInputCell('text', 'name'));                          // 2. Name
+      cells.push(createSelectCell());                                       // 3. Positional
+      cells.push(createInputCell('text', 'skills'));                        // 4. Skills
+      cells.push(createInputCell('text', 'startingSkills', true));          // 5. Starting Skills
+      // 6-10. Stat columns (read-only)
+      cells.push(createInputCell('text', 'ma', true));
+      cells.push(createInputCell('text', 'st', true));
+      cells.push(createInputCell('text', 'ag', true));
+      cells.push(createInputCell('text', 'pa', true));
+      cells.push(createInputCell('text', 'av', true));
+      cells.push(createInputCell('text', 'injury'));                        // 11. Injury
+      cells.push(createInputCell('number', 'chosenPrimary'));               // 12. Chosen Primary Skills
+      cells.push(createInputCell('number', 'chosenSecondary'));             // 13. Chosen Secondary Skills
+      cells.push(createInputCell('number', 'randomPrimary'));               // 14. Random Primary Skills
+      cells.push(createInputCell('number', 'randomSecondary'));             // 15. Random Secondary Skills
+      // 16-20. Stat Upgrade columns
+      cells.push(createInputCell('number', 'maUpgrade'));
+      cells.push(createInputCell('number', 'stUpgrade'));
+      cells.push(createInputCell('number', 'agUpgrade'));
+      cells.push(createInputCell('number', 'paUpgrade'));
+      cells.push(createInputCell('number', 'avUpgrade'));
+      cells.push(createInputCell('number', 'value', true));                 // 21. Value (GP) (read-only)
+      cells.push(createInputCell('number', 'seasons'));                     // 22. Seasons
+      cells.push(createInputCell('number', 'rehirePrice', true));           // 23. Rehire Price (read-only)
+      
+      cells.forEach(cell => row.appendChild(cell));
+      tableBody.appendChild(row);
+    }
+  </script>
+</body>
+</html>
