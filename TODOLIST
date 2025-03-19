@@ -2,3 +2,4 @@ TODO:
 Add an export button , this export button will download 2 files:
 -one of them is the list of free agent and redrafted players in a csv format to use for other purpose (I realise its not possible w ith the current system as the user i not entering his team informations)
 -The other on are the detail of the redraft like reroll, players cost and stuff like that
+-Make the players list a dedicated file
