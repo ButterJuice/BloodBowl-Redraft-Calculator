@@ -54,7 +54,7 @@
     <input type="number" id="cheerleaders" /><br />
     <label for="apothecary">Keep Apothecary (50k)?</label>
     <input type="checkbox" id="apothecary" /><br /><br />
-    <button onclick="calculateRedraft()">Calculate Redraft</button>
+    <button onclick="calculateAndSummarize()">Calculate Redraft</button>
     <pre id="result"></pre>
   </div>
 
@@ -134,45 +134,66 @@
     const paUpgradeGP = 20000, paUpgradeSPP = 8;
     const avUpgradeGP = 10000, avUpgradeSPP = 8;
     
-    // Redraft Calculator function.
-    function calculateRedraft() {
-      let baseBudget = 1000000;
-      let treasuryInput = parseInt(document.getElementById("treasury").value) || 0;
-      let gamesPlayed = parseInt(document.getElementById("gamesPlayed").value) || 0;
-      let wins = parseInt(document.getElementById("wins").value) || 0;
-      let draws = parseInt(document.getElementById("draws").value) || 0;
-      let bonus = (gamesPlayed * 20000) + (wins * 20000) + (draws * 10000);
-      let totalBudget = baseBudget + treasuryInput + bonus;
-      totalBudget = Math.min(totalBudget, 1300000); // Cap the budget
-      
-      let assistants = parseInt(document.getElementById("assistants").value) || 0;
-      let cheerleaders = parseInt(document.getElementById("cheerleaders").value) || 0;
-      let apothecaryCost = document.getElementById("apothecary").checked ? 50000 : 0;
-      let staffCost = (assistants + cheerleaders) * 10000 + apothecaryCost;
-      
-      // Reroll cost determined by team type.
-      const teamType = document.getElementById("teamType").value;
-      const rerollCostPer = (teamRerollCosts[teamType] * 2) || 0;
-      let rerolls = parseInt(document.getElementById("rerolls").value) || 0;
-      let totalRerollCost = rerollCostPer * rerolls;
-      
-      // Sum up player rehire prices from the team sheet.
-      let totalPlayerCost = 0;
-      const rows = document.getElementById('teamSheet').querySelectorAll('tbody tr');
-      rows.forEach(row => {
-        let playerRehire = parseInt(row.querySelector('.rehirePrice').value) || 0;
-        totalPlayerCost += playerRehire;
-      });
-      
-      let remainingBudget = totalBudget - staffCost - totalRerollCost - totalPlayerCost;
-      
-      document.getElementById("result").innerText = 
-        `Total Budget: ${totalBudget} gold\n` +
-        `Staff Cost: ${staffCost} gold\n` +
-        `Rerolls Cost: ${totalRerollCost} gold\n` +
-        `Total Player Cost (Rehire Price): ${totalPlayerCost} gold\n` +
-        `Remaining Treasury: ${remainingBudget} gold`;
-    }
+// Combined function: calculates redraft details and returns a summary.
+function calculateAndSummarize() {
+    const baseBudget = 1000000;
+    const treasuryInput = parseInt(document.getElementById("treasury").value) || 0;
+    const gamesPlayed = parseInt(document.getElementById("gamesPlayed").value) || 0;
+    const wins = parseInt(document.getElementById("wins").value) || 0;
+    const draws = parseInt(document.getElementById("draws").value) || 0;
+    const bonus = (gamesPlayed * 20000) + (wins * 20000) + (draws * 10000);
+    let totalBudget = baseBudget + treasuryInput + bonus;
+    totalBudget = Math.min(totalBudget, 1300000); // Cap the budget
+
+    const assistants = parseInt(document.getElementById("assistants").value) || 0;
+    const cheerleaders = parseInt(document.getElementById("cheerleaders").value) || 0;
+    const apothecaryCost = document.getElementById("apothecary").checked ? 50000 : 0;
+    const staffCost = (assistants + cheerleaders) * 10000 + apothecaryCost;
+
+    const teamType = document.getElementById("teamType").value;
+    const rerollCostPer = (teamRerollCosts[teamType] * 2) || 0;
+    const rerolls = parseInt(document.getElementById("rerolls").value) || 0;
+    const totalRerollCost = rerollCostPer * rerolls;
+
+    // Sum up player rehire prices from the team sheet.
+    let totalPlayerCost = 0;
+    const rows = document.getElementById('teamSheet').querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      let playerRehire = parseInt(row.querySelector('.rehirePrice').value) || 0;
+      totalPlayerCost += playerRehire;
+    });
+    
+    const remainingBudget = totalBudget - staffCost - totalRerollCost - totalPlayerCost;
+    
+    // Update the result display.
+    document.getElementById("result").innerText =
+      `Total Budget: ${totalBudget} gold\n` +
+      `Staff Cost: ${staffCost} gold\n` +
+      `Rerolls Cost: ${totalRerollCost} gold\n` +
+      `Total Player Cost (Rehire Price): ${totalPlayerCost} gold\n` +
+      `Remaining Treasury: ${remainingBudget} gold`;
+
+    // Return summary as an array of objects.
+    return [
+      { metric: "Base Budget", value: baseBudget },
+      { metric: "Previous Treasury", value: treasuryInput },
+      { metric: "Games Played Last Season", value: gamesPlayed },
+      { metric: "Wins", value: wins },
+      { metric: "Draws", value: draws },
+      { metric: "Bonus", value: bonus },
+      { metric: "Total Budget (capped)", value: totalBudget },
+      { metric: "Assistant Coaches", value: assistants },
+      { metric: "Cheerleaders", value: cheerleaders },
+      { metric: "Apothecary Cost", value: apothecaryCost },
+      { metric: "Staff Cost", value: staffCost },
+      { metric: "Team Rerolls to Keep", value: rerolls },
+      { metric: "Reroll Cost per", value: rerollCostPer },
+      { metric: "Total Reroll Cost", value: totalRerollCost },
+      { metric: "Total Player Cost (Rehire Price)", value: totalPlayerCost },
+      { metric: "Remaining Treasury", value: remainingBudget }
+    ];
+  }
+
     
     // When a player is selected, auto-fill the base cost, starting skills, and stat fields.
     function updatePositional(selectElement) {
@@ -535,45 +556,12 @@
     }
 
 
-    const handleExport = () => {
-  console.log("Export button clicked!");
-
-  const players = getPlayersData(); 
-  const redraftDetails = getRedraftDetails();
-
-  // Log data to check if they're undefined or empty
-  console.log("Players Data:", players);
-  console.log("Redraft Details:", redraftDetails);
-
-  if (!players || !Array.isArray(players)) {
-    console.error("Players data is not defined or is not an array");
-    return; // Prevent further execution if players data is not valid
+  // Updated export function: creates one CSV with all the details.
+  function handleExport() {
+    console.log("Export button clicked!");
+    const csvContent = generateFullExportCSV();
+    downloadCSV(csvContent, "redraft_full_details.csv");
   }
-
-  // Check if redraftDetails is an array or object
-  if (!redraftDetails) {
-    console.error("Redraft details data is undefined");
-    return; // Prevent further execution if redraft details data is not valid
-  }
-
-  // If redraftDetails is an object, convert it into an array of key-value pairs
-  let redraftDetailsArray;
-  if (typeof redraftDetails === "object" && !Array.isArray(redraftDetails)) {
-    redraftDetailsArray = Object.keys(redraftDetails).map(key => ({
-      key: key,
-      value: redraftDetails[key]
-    }));
-  } else {
-    redraftDetailsArray = redraftDetails; // If it's already an array, use it as is
-  }
-
-  const playersCSV = convertToCSV(players);
-  const redraftCSV = convertToCSV(redraftDetailsArray);
-
-  // Trigger downloads
-  downloadCSV(playersCSV, "free_agents_redrafted.csv");
-  downloadCSV(redraftCSV, "redraft_details.csv");
-};
 
 const convertToCSV = (data) => {
   if (!data || data.length === 0) {
@@ -590,8 +578,95 @@ const convertToCSV = (data) => {
   return [keys.join(","), ...csv].join("\n"); // Join headers and rows into a CSV format
 };
 
+  // Helper: Get player cost details from the team sheet.
+  function getPlayerCostDetails() {
+    const data = [];
+    const rows = document.querySelectorAll('#teamSheet tbody tr');
+    rows.forEach(row => {
+      const name = row.querySelector('.name') ? row.querySelector('.name').value : "";
+      const positional = row.querySelector('.positional') ? row.querySelector('.positional').value : "";
+      const value = row.querySelector('.value') ? row.querySelector('.value').value : "";
+      const rehirePrice = row.querySelector('.rehirePrice') ? row.querySelector('.rehirePrice').value : "";
+      data.push({ name, positional, value, rehirePrice });
+    });
+    return data;
+  }
 
-  const downloadCSV = (csv, filename) => {
+ // Helper: Get player skills and stats details from the team sheet.
+ function getPlayerSkillsDetails() {
+    const data = [];
+    const rows = document.querySelectorAll('#teamSheet tbody tr');
+    rows.forEach(row => {
+      const level = row.querySelector('.level') ? row.querySelector('.level').value : "";
+      const name = row.querySelector('.name') ? row.querySelector('.name').value : "";
+      const positional = row.querySelector('.positional') ? row.querySelector('.positional').value : "";
+      const skills = row.querySelector('.skills') ? row.querySelector('.skills').value : "";
+      const startingSkills = row.querySelector('.startingSkills') ? row.querySelector('.startingSkills').value : "";
+      const ma = row.querySelector('.ma') ? row.querySelector('.ma').value : "";
+      const st = row.querySelector('.st') ? row.querySelector('.st').value : "";
+      const ag = row.querySelector('.ag') ? row.querySelector('.ag').value : "";
+      const pa = row.querySelector('.pa') ? row.querySelector('.pa').value : "";
+      const av = row.querySelector('.av') ? row.querySelector('.av').value : "";
+      const injury = row.querySelector('.injury') ? row.querySelector('.injury').value : "";
+      const chosenPrimary = row.querySelector('.chosenPrimary') ? row.querySelector('.chosenPrimary').value : "";
+      const chosenSecondary = row.querySelector('.chosenSecondary') ? row.querySelector('.chosenSecondary').value : "";
+      const randomPrimary = row.querySelector('.randomPrimary') ? row.querySelector('.randomPrimary').value : "";
+      const randomSecondary = row.querySelector('.randomSecondary') ? row.querySelector('.randomSecondary').value : "";
+      const maUpgrade = row.querySelector('.maUpgrade') ? row.querySelector('.maUpgrade').value : "";
+      const stUpgrade = row.querySelector('.stUpgrade') ? row.querySelector('.stUpgrade').value : "";
+      const agUpgrade = row.querySelector('.agUpgrade') ? row.querySelector('.agUpgrade').value : "";
+      const paUpgrade = row.querySelector('.paUpgrade') ? row.querySelector('.paUpgrade').value : "";
+      const avUpgrade = row.querySelector('.avUpgrade') ? row.querySelector('.avUpgrade').value : "";
+      const seasons = row.querySelector('.seasons') ? row.querySelector('.seasons').value : "";
+      data.push({
+        level, name, positional, skills, startingSkills, ma, st, ag, pa, av,
+        injury, chosenPrimary, chosenSecondary, randomPrimary, randomSecondary,
+        maUpgrade, stUpgrade, agUpgrade, paUpgrade, avUpgrade, seasons
+      });
+    });
+    return data;
+  }
+
+  // Generate a CSV string with all sections
+  function generateFullExportCSV() {
+    let csvContent = "";
+
+    // --- Section 1: Calculation Summary ---
+    csvContent += "Calculation Summary\n";
+    csvContent += "Metric,Value\n";
+    const summary = getCalculationSummary();
+    summary.forEach(item => {
+      csvContent += `"${item.metric}","${item.value}"\n`;
+    });
+    csvContent += "\n"; // Blank line between sections
+
+    // --- Section 2: Player Cost Details ---
+    csvContent += "Player Cost Details\n";
+    csvContent += "Name,Positional,Value (GP),Rehire Price\n";
+    const costDetails = getPlayerCostDetails();
+    costDetails.forEach(player => {
+      csvContent += `"${player.name}","${player.positional}","${player.value}","${player.rehirePrice}"\n`;
+    });
+    csvContent += "\n"; // Blank line between sections
+
+    // --- Section 3: Player Skills and Stats Details ---
+    csvContent += "Player Skills and Stats Details\n";
+    csvContent += "Level,Name,Positional,Skills,Starting Skills,MA,ST,AG,PA,AV,Injury,Chosen Primary,Chosen Secondary,Random Primary,Random Secondary,MA Upgrade,ST Upgrade,AG Upgrade,PA Upgrade,AV Upgrade,Seasons\n";
+    const skillsDetails = getPlayerSkillsDetails();
+    skillsDetails.forEach(player => {
+      csvContent += `"${player.level}","${player.name}","${player.positional}","${player.skills}","${player.startingSkills}","${player.ma}","${player.st}","${player.ag}","${player.pa}","${player.av}","${player.injury}","${player.chosenPrimary}","${player.chosenSecondary}","${player.randomPrimary}","${player.randomSecondary}","${player.maUpgrade}","${player.stUpgrade}","${player.agUpgrade}","${player.paUpgrade}","${player.avUpgrade}","${player.seasons}"\n`;
+    });
+
+    return csvContent;
+  }
+
+  // Example export functions that use the combined calculation function.
+  function getCalculationSummary() {
+    return calculateAndSummarize();
+  }
+
+  // Helper function to trigger file download
+  function downloadCSV(csv, filename) {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -601,8 +676,7 @@ const convertToCSV = (data) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
+  }
 
   </script>
 
