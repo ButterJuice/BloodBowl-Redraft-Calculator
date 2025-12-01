@@ -1,3 +1,6 @@
+BECAUSE REDRAFT IS IN BLOOD BOWL 3 I WON'T BE UPDATING THIS.
+
+
 # BloodBowl-Redraft-Calculator
 
 To use this tool you just need the html file (and the css to make it look good)
